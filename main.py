@@ -30,6 +30,34 @@ BASE_WORKSPACE.mkdir(parents=True, exist_ok=True)
 
 CONFIG_PATH = BASE_WORKSPACE / ".server_config.json"
 
+# ==========================================
+# ডিফল্ট ফাইল তৈরি (Default Files Setup)
+# ==========================================
+DEFAULT_MAIN_CODE = """# JUBAYER HOSTING - Bot
+import time
+
+print("\\033[92m" + "=" * 40)
+print("  Bot is running on JUBAYER HOSTING")
+print("  Termux Console Ready!")
+print("=" * 40 + "\\033[0m")
+
+counter = 0
+while True:
+    counter += 1
+    print(f"\\033[94m[{time.strftime('%H:%M:%S')}]\\033[0m \\033[93mHeartbeat #{counter}\\033[0m | \\033[92mActive\\033[0m")
+    time.sleep(10)
+"""
+
+DEFAULT_REQ_CODE = "# Add your pip packages here\n"
+
+default_main = BASE_WORKSPACE / "main.py"
+if not default_main.exists():
+    default_main.write_text(DEFAULT_MAIN_CODE, encoding="utf-8")
+
+default_req = BASE_WORKSPACE / "requirements.txt"
+if not default_req.exists():
+    default_req.write_text(DEFAULT_REQ_CODE, encoding="utf-8")
+
 
 # ==========================================
 # হেল্পার ফাংশন (Path Traversal Security)
@@ -53,16 +81,7 @@ class ServerProcessManager:
         self.max_logs: int = 3000
 
     def append_log(self, text: str):
-        # 📦 Installing সম্পর্কিত লাইনগুলো বাদ দেওয়া (ফিল্টার)
-        lines = [
-            line for line in text.splitlines(keepends=True)
-            if not ("📦 Installing" in line or "Installing pyTelegramBotAPI" in line or "Installing psutil" in line)
-        ]
-        clean_text = "".join(lines)
-        if not clean_text:
-            return
-
-        self.logs.append(clean_text)
+        self.logs.append(text)
         if len(self.logs) > self.max_logs:
             self.logs = self.logs[-self.max_logs:]
 
@@ -136,7 +155,7 @@ async def start_server(server_id: str):
     if server_mgr.process and server_mgr.process.returncode is None:
         return {"message": "Server is already running!"}
 
-    # কনফিগারেশন থেকে মেইন এন্ট্রি পয়েন্ট ও requirements ফাইল বের করা
+    # কনফিগারেশন থেকে মেইন ফাইল ও requirements ফাইল বের করা
     cfg = get_startup_cfg()
     main_script = cfg.get("main_file", "main.py")
     req_file = cfg.get("req_file", "requirements.txt")
@@ -144,41 +163,41 @@ async def start_server(server_id: str):
     script_path = BASE_WORKSPACE / main_script
     req_path = BASE_WORKSPACE / req_file
 
-    if not script_path.exists():
-        # ফাইল না থাকলে একটি ডামি ফাইল তৈরি করা যাতে ক্র্যাশ না করে
-        script_path.write_text("import time\nprint('Server started!')\nwhile True:\n    time.sleep(1)\n")
-
-    # ১. requirements.txt ফাইল থাকলে এবং আগে ইনস্টল না থাকলে কেবল তখনই ইনস্টল হবে
+    # ১. requirements.txt চেক করা এবং ইনস্টল করা (যদি আগে না হয়ে থাকে)
     if req_path.exists() and req_path.is_file():
-        req_hash_file = Path("./.requirements_installed").resolve()
-        current_hash = hashlib.md5(req_path.read_bytes()).hexdigest()
+        req_content = req_path.read_text(encoding="utf-8", errors="replace")
+        packages = [line.strip() for line in req_content.splitlines() if line.strip() and not line.strip().startswith("#")]
         
-        # আগে থেকে ডাউনলোড/ইনস্টল করা আছে কিনা চেক করা
-        is_already_installed = (
-            req_hash_file.exists() and req_hash_file.read_text(encoding="utf-8").strip() == current_hash
-        )
+        if packages:
+            current_hash = hashlib.md5(req_content.encode("utf-8")).hexdigest()
+            hash_file = BASE_WORKSPACE / ".req_installed.hash"
+            already_installed = hash_file.exists() and hash_file.read_text(encoding="utf-8").strip() == current_hash
 
-        if not is_already_installed:
-            server_mgr.append_log(f"pip install -r {req_file}\n")
-            try:
-                pip_proc = await asyncio.create_subprocess_exec(
-                    sys.executable, "-m", "pip", "install", "-r", str(req_path),
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    cwd=str(BASE_WORKSPACE)
-                )
-                # ইনস্টল সম্পন্ন হওয়া পর্যন্ত অপেক্ষা করা
-                await asyncio.gather(
-                    stream_reader(pip_proc.stdout),
-                    stream_reader(pip_proc.stderr)
-                )
-                # সফলভাবে ইনস্টল হওয়ার পর হ্যাশ সেভ করে রাখা
-                req_hash_file.write_text(current_hash, encoding="utf-8")
-            except Exception as e:
-                server_mgr.append_log(f"{str(e)}\n")
+            if not already_installed:
+                server_mgr.append_log(f"\npip install -r {req_file}\n")
+                try:
+                    pip_proc = await asyncio.create_subprocess_exec(
+                        sys.executable, "-m", "pip", "install", "-r", str(req_path),
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                        cwd=str(BASE_WORKSPACE)
+                    )
+                    stdout, stderr = await pip_proc.communicate()
+                    
+                    if pip_proc.returncode == 0:
+                        hash_file.write_text(current_hash, encoding="utf-8")
+                    else:
+                        if stderr:
+                            server_mgr.append_log(stderr.decode("utf-8", errors="replace"))
+                except Exception as e:
+                    pass
 
-    # ২. requirements ইনস্টল শেষ হলে (বা ফাইলটি আগে থেকেই ইনস্টল থাকলে) python main.py রান হবে
-    server_mgr.append_log(f"python {main_script}\n")
+    # ২. স্ক্রিপ্ট না থাকলে তৈরি করা
+    if not script_path.exists():
+        script_path.write_text(DEFAULT_MAIN_CODE, encoding="utf-8")
+
+    # ৩. মেইন স্ক্রিপ্ট চালু করা
+    server_mgr.append_log(f"\npython {main_script}\n")
     
     try:
         server_mgr.process = await asyncio.create_subprocess_exec(
@@ -189,8 +208,8 @@ async def start_server(server_id: str):
         )
 
         asyncio.create_task(stream_reader(server_mgr.process.stdout))
-        # [STDERR] প্রফিক্স ছাড়া সরাসরি এরর লগ দেখানো
-        asyncio.create_task(stream_reader(server_mgr.process.stderr))
+        # [STDERR] প্রিফিক্স ছাড়া এরর পড়বে
+        asyncio.create_task(stream_reader(server_mgr.process.stderr, prefix=""))
         return {"status": "started"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -269,8 +288,9 @@ async def list_files(server_id: str, path: str = ""):
     files_list = []
     try:
         for entry in os.scandir(target_dir):
-            if entry.name == ".server_config.json":
-                continue  # হিডেন কনফিগ হাইড রাখা
+            # ডট দিয়ে শুরু হওয়া হিডেন ফাইল হাইড রাখা
+            if entry.name.startswith("."):
+                continue
             files_list.append({
                 "name": entry.name,
                 "is_dir": entry.is_dir()
