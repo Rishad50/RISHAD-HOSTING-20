@@ -711,32 +711,6 @@
       border-color: var(--primary);
     }
 
-    /* Toast Notification */
-    .fm-toast {
-      position: fixed;
-      bottom: calc(var(--nav-height) + 16px + env(safe-area-inset-bottom, 0px));
-      left: 50%;
-      transform: translateX(-50%) translateY(30px);
-      background-color: #0f172a;
-      color: #ffffff;
-      padding: 0.55rem 1.15rem;
-      border-radius: 30px;
-      font-size: 0.78rem;
-      font-weight: 500;
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-      z-index: 1300;
-      white-space: nowrap;
-    }
-
-    .fm-toast.show {
-      transform: translateX(-50%) translateY(0);
-      opacity: 1;
-      visibility: visible;
-    }
-
     /* STANDARD BOTTOM NAVIGATION BAR */
     .bottom-nav {
       position: fixed;
@@ -933,7 +907,7 @@
     <button class="nav-btn" role="tab" aria-selected="false" aria-controls="tab-startup" onclick="nav.switch('startup')" id="nav-btn-startup">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 1 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
       </svg>
       <span>Startup</span>
     </button>
@@ -979,9 +953,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Toast Notification -->
-  <div class="fm-toast" id="fm-toast">Changes saved</div>
 
   <!-- JAVASCRIPT CONTROLLER -->
   <script>
@@ -1054,13 +1025,8 @@
       }
     };
 
-    /* TOAST HELPER */
-    function showToast(msg) {
-      const toastEl = document.getElementById('fm-toast');
-      toastEl.textContent = msg;
-      toastEl.classList.add('show');
-      setTimeout(() => toastEl.classList.remove('show'), 2500);
-    }
+    /* NOTIFICATION HELPER (REMOVED) */
+    function showToast(msg) {}
 
     /* SVG ICONS */
     const ICONS = {
@@ -1076,23 +1042,20 @@
       async start() {
         try {
           await api.post(`/api/start/${CONFIG.SERVER_ID}`);
-          showToast("Server Started Successfully");
           setTimeout(pollLogs, 300);
-        } catch (err) { showToast("Start Failed: " + err.message); }
+        } catch (err) {}
       },
       async stop() {
         try {
           await api.post(`/api/stop/${CONFIG.SERVER_ID}`);
-          showToast("Server Stopped");
           setTimeout(pollLogs, 300);
-        } catch (err) { showToast("Stop Failed: " + err.message); }
+        } catch (err) {}
       },
       async restart() {
         try {
           await api.post(`/api/restart/${CONFIG.SERVER_ID}`);
-          showToast("Server Restarting...");
           setTimeout(pollLogs, 300);
-        } catch (err) { showToast("Restart Failed: " + err.message); }
+        } catch (err) {}
       }
     };
 
@@ -1103,10 +1066,7 @@
           terminalEl.innerHTML = "";
           lastLogText = "";
           await api.post(`/api/clear_logs/${CONFIG.SERVER_ID}`);
-          showToast("Terminal & Logs Cleared");
-        } catch (err) {
-          showToast("Clear Failed: " + err.message);
-        }
+        } catch (err) {}
       }
     };
 
@@ -1157,9 +1117,7 @@
           });
           setTimeout(pollLogs, 200);
           setTimeout(pollLogs, 800);
-        } catch (err) {
-          showToast("Command execution failed: " + err.message);
-        }
+        } catch (err) {}
       },
 
       handleKeydown(e) {
@@ -1447,16 +1405,14 @@
             const newPath = parentDir ? `${parentDir}/${newName}` : newName;
             try {
               await api.post(`/api/rename/${CONFIG.SERVER_ID}`, { old_path: fullPath, new_path: newPath });
-              showToast("Renamed successfully");
               this.load();
-            } catch (err) { showToast("Rename Failed: " + err.message); }
+            } catch (err) {}
           });
         } else if (action === 'extract') {
           try {
             await api.post(`/api/extract/${CONFIG.SERVER_ID}`, { file_path: fullPath, target_path: this.currentPath || "" });
-            showToast("ZIP Extracted Successfully");
             this.load();
-          } catch (err) { showToast("Extract Failed: " + err.message); }
+          } catch (err) {}
         } else if (action === 'download') {
           try {
             const res = await api.get(`/api/file/${CONFIG.SERVER_ID}?path=${encodeURIComponent(fullPath)}`);
@@ -1469,15 +1425,13 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
-            showToast(`Downloaded ${item.name}`);
-          } catch (err) { showToast("Download failed: " + err.message); }
+          } catch (err) {}
         } else if (action === 'delete') {
           openDeleteConfirmModal(item.name, async () => {
             try {
               await api.delete(`/api/file/${CONFIG.SERVER_ID}`, { path: fullPath });
-              showToast(`Deleted ${item.name}`);
               this.load();
-            } catch (err) { showToast("Delete Failed: " + err.message); }
+            } catch (err) {}
           });
         }
       },
@@ -1488,9 +1442,8 @@
           const path = this.currentPath ? `${this.currentPath}/${folderName}` : folderName;
           try {
             await api.post(`/api/create_folder/${CONFIG.SERVER_ID}`, { path, folder_name: folderName });
-            showToast(`Created folder ${folderName}`);
             this.load();
-          } catch (err) { showToast("Failed: " + err.message); }
+          } catch (err) {}
         });
       },
 
@@ -1500,10 +1453,9 @@
           const path = this.currentPath ? `${this.currentPath}/${filename}` : filename;
           try {
             await api.post(`/api/file/${CONFIG.SERVER_ID}`, { path, content: "" });
-            showToast(`Created ${filename}`);
             this.load();
             fileEditor.open(path);
-          } catch (err) { showToast("Failed: " + err.message); }
+          } catch (err) {}
         });
       },
 
@@ -1515,9 +1467,8 @@
         fd.append("path", this.currentPath || "");
         try {
           await api.upload(`/api/upload/${CONFIG.SERVER_ID}`, fd);
-          showToast(`Uploaded ${files.length} file(s)`);
           this.load();
-        } catch (err) { showToast("Upload Failed: " + err.message); }
+        } catch (err) {}
         e.target.value = "";
       }
     };
@@ -1542,7 +1493,6 @@
           this.contentEl.value = res.content !== undefined ? res.content : "";
           this.contentEl.focus();
         } catch (err) {
-          showToast("Failed to read file: " + err.message);
           this.modal.classList.remove('open');
         }
       },
@@ -1556,10 +1506,8 @@
             path: this.currentFilePath,
             content: this.contentEl.value
           });
-          showToast("File saved successfully");
           this.modal.classList.remove('open');
         } catch (err) {
-          showToast("Save Failed: " + err.message);
         } finally {
           this.saveBtn.textContent = "Save Changes";
           this.saveBtn.disabled = false;
@@ -1600,10 +1548,7 @@
             main_file: document.getElementById("startup-main-file").value.trim(),
             req_file: document.getElementById("startup-req-file").value.trim()
           });
-          showToast("Startup configuration saved");
-        } catch (err) {
-          showToast("Failed to save startup config: " + err.message);
-        }
+        } catch (err) {}
       }
     };
 
