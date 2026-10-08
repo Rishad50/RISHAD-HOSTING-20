@@ -126,7 +126,7 @@ async def start_server(server_id: str):
     if server_mgr.process and server_mgr.process.returncode is None:
         return {"message": "Server is already running!"}
 
-    # কনফিগারেশন থেকে মেইন ফাইল ও requirements ফাইল বের করা
+    # কনফিগারেশন থেকে মেইন এন্ট্রি পয়েন্ট ও requirements ফাইল বের করা
     cfg = get_startup_cfg()
     main_script = cfg.get("main_file", "main.py")
     req_file = cfg.get("req_file", "requirements.txt")
@@ -134,33 +134,16 @@ async def start_server(server_id: str):
     script_path = BASE_WORKSPACE / main_script
     req_path = BASE_WORKSPACE / req_file
 
-    # ১. requirements.txt ফাইল থাকলে আগে ইনস্টল করা হবে
-    if req_path.exists() and req_path.is_file():
-        server_mgr.append_log(f"\npip install -r {req_file}\n")
-        try:
-            pip_proc = await asyncio.create_subprocess_exec(
-                sys.executable, "-m", "pip", "install", "-r", str(req_path),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=str(BASE_WORKSPACE)
-            )
-            stdout, stderr = await pip_proc.communicate()
-            if stdout:
-                server_mgr.append_log(stdout.decode("utf-8", errors="replace"))
-            if stderr:
-                server_mgr.append_log(stderr.decode("utf-8", errors="replace"))
-
-            if pip_proc.returncode != 0:
-                server_mgr.append_log(f"[System] Warning: Failed to install some dependencies (Code: {pip_proc.returncode})\n")
-        except Exception as e:
-            server_mgr.append_log(f"[System] Error installing requirements: {str(e)}\n")
-
-    # ২. স্ক্রিপ্ট না থাকলে ডামি ফাইল তৈরি করা
     if not script_path.exists():
+        # ফাইল না থাকলে একটি ডামি ফাইল তৈরি করা যাতে ক্র্যাশ না করে
         script_path.write_text("import time\nprint('Server started!')\nwhile True:\n    time.sleep(1)\n")
 
-    # ৩. মেইন স্ক্রিপ্ট চালু করা
-    server_mgr.append_log(f"\npython {main_script}\n")
+    # requirements.txt থাকলে শুধু এই টেক্সট দেখাবে
+    if req_path.exists():
+        server_mgr.append_log(f"pip install -r {req_file}\n")
+
+    # স্ক্রিপ্ট চালুর আগে শুধু এই টেক্সট দেখাবে
+    server_mgr.append_log(f"python {main_script}\n")
     
     try:
         server_mgr.process = await asyncio.create_subprocess_exec(
@@ -251,7 +234,7 @@ async def list_files(server_id: str, path: str = ""):
     try:
         for entry in os.scandir(target_dir):
             if entry.name == ".server_config.json":
-                continue
+                continue  # হিডেন কনফিগ হাইড রাখা
             files_list.append({
                 "name": entry.name,
                 "is_dir": entry.is_dir()
