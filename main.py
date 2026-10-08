@@ -52,7 +52,16 @@ class ServerProcessManager:
         self.max_logs: int = 3000
 
     def append_log(self, text: str):
-        self.logs.append(text)
+        # 📦 Installing সম্পর্কিত লাইনগুলো বাদ দেওয়া (ফিল্টার)
+        lines = [
+            line for line in text.splitlines(keepends=True)
+            if not ("📦 Installing" in line or "Installing pyTelegramBotAPI" in line or "Installing psutil" in line)
+        ]
+        clean_text = "".join(lines)
+        if not clean_text:
+            return
+
+        self.logs.append(clean_text)
         if len(self.logs) > self.max_logs:
             self.logs = self.logs[-self.max_logs:]
 
