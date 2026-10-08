@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 app = FastAPI(title="Control Panel API")
 
-# CORS এনাবল করা (যেকোনো ডোমেইন বা পোর্ট থেকে কল করার জন্য)
+# CORS এনাবল করা
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -155,7 +155,6 @@ async def start_server(server_id: str):
     if server_mgr.process and server_mgr.process.returncode is None:
         return {"message": "Server is already running!"}
 
-    # কনফিগারেশন থেকে মেইন ফাইল ও requirements ফাইল বের করা
     cfg = get_startup_cfg()
     main_script = cfg.get("main_file", "main.py")
     req_file = cfg.get("req_file", "requirements.txt")
@@ -163,7 +162,7 @@ async def start_server(server_id: str):
     script_path = BASE_WORKSPACE / main_script
     req_path = BASE_WORKSPACE / req_file
 
-    # ১. requirements.txt চেক করা এবং ইনস্টল করা (যদি আগে না হয়ে থাকে)
+    # requirements.txt চেক করা এবং ইনস্টল করা
     if req_path.exists() and req_path.is_file():
         req_content = req_path.read_text(encoding="utf-8", errors="replace")
         packages = [line.strip() for line in req_content.splitlines() if line.strip() and not line.strip().startswith("#")]
@@ -177,29 +176,26 @@ async def start_server(server_id: str):
                 server_mgr.append_log(f"\npip install -r {req_file}\n")
                 try:
                     pip_proc = await asyncio.create_subprocess_exec(
-                        sys.executable, "-u", "-m", "pip", "install", "-r", str(req_path),
+                        sys.executable, "-m", "pip", "install", "-r", str(req_path),
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.PIPE,
                         cwd=str(BASE_WORKSPACE)
                     )
+                    stdout, stderr = await pip_proc.communicate()
                     
-                    # ইনস্টল হওয়ার সময় রিয়েল-টাইমে লগ টার্মিনালে দেখানো
-                    await asyncio.gather(
-                        stream_reader(pip_proc.stdout),
-                        stream_reader(pip_proc.stderr),
-                        pip_proc.wait()
-                    )
-
                     if pip_proc.returncode == 0:
                         hash_file.write_text(current_hash, encoding="utf-8")
+                    else:
+                        if stderr:
+                            server_mgr.append_log(stderr.decode("utf-8", errors="replace"))
                 except Exception as e:
-                    server_mgr.append_log(f"Error: {str(e)}\n")
+                    pass
 
-    # ২. স্ক্রিপ্ট না থাকলে তৈরি করা
+    # স্ক্রিপ্ট না থাকলে তৈরি করা
     if not script_path.exists():
         script_path.write_text(DEFAULT_MAIN_CODE, encoding="utf-8")
 
-    # ৩. মেইন স্ক্রিপ্ট চালু করা
+    # মেইন স্ক্রিপ্ট চালু করা
     server_mgr.append_log(f"\npython {main_script}\n")
     
     try:
@@ -416,4 +412,17 @@ async def get_startup(server_id: str):
 async def set_startup(server_id: str, payload: StartupConfigRequest):
     try:
         data = {"main_file": payload.main_file, "req_file": payload.req_file}
-        CONFIG_PATH.write_text(json.dumps(da
+        CONFIG_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        return {"status": "saved"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================
+# সার্ভার চালু করার কোড
+# ==========================================
+if __name__ == "__main__":
+    import uvicorn
+    # Render এর $PORT ধরবে, লোকাল পিসিতে থাকলে 8000 ব্যবহার করবে
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
