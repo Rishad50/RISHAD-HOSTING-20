@@ -162,7 +162,7 @@ async def start_server(server_id: str):
     script_path = BASE_WORKSPACE / main_script
     req_path = BASE_WORKSPACE / req_file
 
-    # requirements.txt চেক করা এবং ইনস্টল করা
+    # requirements.txt চেক করা এবং লাইভ ডাউনলোড আউটপুট দেখানো
     if req_path.exists() and req_path.is_file():
         req_content = req_path.read_text(encoding="utf-8", errors="replace")
         packages = [line.strip() for line in req_content.splitlines() if line.strip() and not line.strip().startswith("#")]
@@ -176,18 +176,21 @@ async def start_server(server_id: str):
                 server_mgr.append_log(f"\npip install -r {req_file}\n")
                 try:
                     pip_proc = await asyncio.create_subprocess_exec(
-                        sys.executable, "-m", "pip", "install", "-r", str(req_path),
+                        sys.executable, "-u", "-m", "pip", "install", "-r", str(req_path),
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.PIPE,
                         cwd=str(BASE_WORKSPACE)
                     )
-                    stdout, stderr = await pip_proc.communicate()
+                    
+                    # ডাউনলোড লগ লাইভ টার্মিনালে পাঠানোর টাস্ক
+                    t_out = asyncio.create_task(stream_reader(pip_proc.stdout, prefix=""))
+                    t_err = asyncio.create_task(stream_reader(pip_proc.stderr, prefix=""))
+                    
+                    # ইনস্টলেশন শেষ হওয়া পর্যন্ত অপেক্ষা করবে
+                    await asyncio.gather(t_out, t_err, pip_proc.wait())
                     
                     if pip_proc.returncode == 0:
                         hash_file.write_text(current_hash, encoding="utf-8")
-                    else:
-                        if stderr:
-                            server_mgr.append_log(stderr.decode("utf-8", errors="replace"))
                 except Exception as e:
                     pass
 
