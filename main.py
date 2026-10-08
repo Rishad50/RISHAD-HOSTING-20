@@ -4,6 +4,7 @@ import json
 import shutil
 import zipfile
 import asyncio
+import hashlib
 from pathlib import Path
 from typing import List, Optional
 
@@ -147,25 +148,36 @@ async def start_server(server_id: str):
         # ফাইল না থাকলে একটি ডামি ফাইল তৈরি করা যাতে ক্র্যাশ না করে
         script_path.write_text("import time\nprint('Server started!')\nwhile True:\n    time.sleep(1)\n")
 
-    # ১. requirements.txt ফাইল থাকলে আগে ইনস্টল শেষ হবে
+    # ১. requirements.txt ফাইল থাকলে এবং আগে ইনস্টল না থাকলে কেবল তখনই ইনস্টল হবে
     if req_path.exists() and req_path.is_file():
-        server_mgr.append_log(f"pip install -r {req_file}\n")
-        try:
-            pip_proc = await asyncio.create_subprocess_exec(
-                sys.executable, "-m", "pip", "install", "-r", str(req_path),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                cwd=str(BASE_WORKSPACE)
-            )
-            # ইনস্টল সম্পন্ন হওয়া পর্যন্ত অপেক্ষা করা
-            await asyncio.gather(
-                stream_reader(pip_proc.stdout),
-                stream_reader(pip_proc.stderr)
-            )
-        except Exception as e:
-            server_mgr.append_log(f"{str(e)}\n")
+        req_hash_file = Path("./.requirements_installed").resolve()
+        current_hash = hashlib.md5(req_path.read_bytes()).hexdigest()
+        
+        # আগে থেকে ডাউনলোড/ইনস্টল করা আছে কিনা চেক করা
+        is_already_installed = (
+            req_hash_file.exists() and req_hash_file.read_text(encoding="utf-8").strip() == current_hash
+        )
 
-    # ২. requirements ইনস্টল শেষ হলে (বা ফাইলটি না থাকলে) python main.py রান হবে
+        if not is_already_installed:
+            server_mgr.append_log(f"pip install -r {req_file}\n")
+            try:
+                pip_proc = await asyncio.create_subprocess_exec(
+                    sys.executable, "-m", "pip", "install", "-r", str(req_path),
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE,
+                    cwd=str(BASE_WORKSPACE)
+                )
+                # ইনস্টল সম্পন্ন হওয়া পর্যন্ত অপেক্ষা করা
+                await asyncio.gather(
+                    stream_reader(pip_proc.stdout),
+                    stream_reader(pip_proc.stderr)
+                )
+                # সফলভাবে ইনস্টল হওয়ার পর হ্যাশ সেভ করে রাখা
+                req_hash_file.write_text(current_hash, encoding="utf-8")
+            except Exception as e:
+                server_mgr.append_log(f"{str(e)}\n")
+
+    # ২. requirements ইনস্টল শেষ হলে (বা ফাইলটি আগে থেকেই ইনস্টল থাকলে) python main.py রান হবে
     server_mgr.append_log(f"python {main_script}\n")
     
     try:
