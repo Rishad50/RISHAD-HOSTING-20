@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import json
 import shutil
 import zipfile
@@ -176,7 +177,9 @@ async def start_server(server_id: str):
             already_installed = hash_file.exists() and hash_file.read_text(encoding="utf-8").strip() == current_hash
 
             if not already_installed:
-                server_mgr.append_log(f"pip install -r {req_file}\n")
+                # সময়সহ মেসেজ শো করবে: [HH:MM:SS AM/PM] Installing requirements...
+                current_time_str = time.strftime("%I:%M:%S %p")
+                server_mgr.append_log(f"[{current_time_str}] Installing requirements...\n")
                 try:
                     pip_proc = await asyncio.create_subprocess_exec(
                         sys.executable, "-u", "-m", "pip", "install", "-r", str(req_path),
