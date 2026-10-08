@@ -147,11 +147,25 @@ async def start_server(server_id: str):
         # ফাইল না থাকলে একটি ডামি ফাইল তৈরি করা যাতে ক্র্যাশ না করে
         script_path.write_text("import time\nprint('Server started!')\nwhile True:\n    time.sleep(1)\n")
 
-    # requirements.txt থাকলে শুধু এই টেক্সট দেখাবে
-    if req_path.exists():
+    # ১. requirements.txt ফাইল থাকলে আগে ইনস্টল শেষ হবে
+    if req_path.exists() and req_path.is_file():
         server_mgr.append_log(f"pip install -r {req_file}\n")
+        try:
+            pip_proc = await asyncio.create_subprocess_exec(
+                sys.executable, "-m", "pip", "install", "-r", str(req_path),
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                cwd=str(BASE_WORKSPACE)
+            )
+            # ইনস্টল সম্পন্ন হওয়া পর্যন্ত অপেক্ষা করা
+            await asyncio.gather(
+                stream_reader(pip_proc.stdout),
+                stream_reader(pip_proc.stderr)
+            )
+        except Exception as e:
+            server_mgr.append_log(f"{str(e)}\n")
 
-    # স্ক্রিপ্ট চালুর আগে শুধু এই টেক্সট দেখাবে
+    # ২. requirements ইনস্টল শেষ হলে (বা ফাইলটি না থাকলে) python main.py রান হবে
     server_mgr.append_log(f"python {main_script}\n")
     
     try:
@@ -163,7 +177,8 @@ async def start_server(server_id: str):
         )
 
         asyncio.create_task(stream_reader(server_mgr.process.stdout))
-        asyncio.create_task(stream_reader(server_mgr.process.stderr, prefix="[STDERR] "))
+        # [STDERR] প্রফিক্স ছাড়া সরাসরি এরর লগ দেখানো
+        asyncio.create_task(stream_reader(server_mgr.process.stderr))
         return {"status": "started"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
