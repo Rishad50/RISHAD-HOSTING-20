@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI(title="Control Panel API")
 
-# CORS এনাবল করা (যেকোনো ডোমেইন বা পোর্ট থেকে কল করার জন্য)
+# CORS এনাবল করা
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,20 +23,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ইউজার ফাইল সংরক্ষণ ও সার্ভার রান করার মূল ডিরেক্টরি
+# ইউজার ফাইল সংরক্ষণ এবং স্ক্রিপ্ট এক্সিকিউট করার ডিরেক্টরি
 BASE_WORKSPACE = Path("./workspace").resolve()
 BASE_WORKSPACE.mkdir(parents=True, exist_ok=True)
-
 CONFIG_PATH = BASE_WORKSPACE / ".server_config.json"
 
 
 # ==========================================
-# হেল্পার ফাংশন (Path Traversal Security)
+# সিকিউরিটি: Path Traversal রোধ করা
 # ==========================================
-def get_safe_path(rel_path: str) -> Path:
-    """নিশ্চিত করে যে ফাইল পাথটি workspace ফোল্ডারের বাইরে না যায়"""
-    rel_path = rel_path.lstrip("/\\")
-    target = (BASE_WORKSPACE / rel_path).resolve()
+def get_safe_path(rel_path: str = "") -> Path:
+    clean = rel_path.lstrip("/\\") if rel_path else ""
+    target = (BASE_WORKSPACE / clean).resolve()
     if not str(target).startswith(str(BASE_WORKSPACE)):
         raise HTTPException(status_code=400, detail="Invalid path / Path traversal detected!")
     return target
@@ -67,17 +65,20 @@ server_mgr = ServerProcessManager()
 
 
 async def stream_reader(stream, prefix=""):
-    """রিয়েল-টাইম লগ পড়ার ব্যাকগ্রাউন্ড টাস্ক"""
+    """রিয়েল-টাইম কনসোল লগ পড়ার জন্য ব্যাকগ্রাউন্ড টাস্ক"""
     while True:
-        line = await stream.readline()
-        if not line:
+        try:
+            line = await stream.readline()
+            if not line:
+                break
+            decoded = line.decode("utf-8", errors="replace")
+            server_mgr.append_log(f"{prefix}{decoded}")
+        except Exception:
             break
-        decoded = line.decode("utf-8", errors="replace")
-        server_mgr.append_log(f"{prefix}{decoded}")
 
 
 # ==========================================
-# Pydantic Schemas (Request Models)
+# Pydantic মডেলস (Payload Validation)
 # ==========================================
 class CommandRequest(BaseModel):
     cmd: str
@@ -108,41 +109,52 @@ class StartupConfigRequest(BaseModel):
 
 
 # ==========================================
-# ১. ফ্রন্টএন্ড পরিবেশন (HTML Serve)
+# ১. ফ্রন্টএন্ড পরিবেশন (HTML Route)
 # ==========================================
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
     index_file = Path("index.html")
     if index_file.exists():
         return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
-    return HTMLResponse("<h2>index.html ফাইলটি পাওয়া যায়নি! দয়া করে একই ফোল্ডারে রাখুন।</h2>")
+    return HTMLResponse("<h2>index.html ফাইলটি পাওয়া যায়নি! একই ফোল্ডারে index.html ফাইলটি রাখুন।</h2>")
 
 
 # ==========================================
-# ২. সার্ভার কন্ট্রোল API (Start, Stop, Restart)
+# ২. সার্ভার লাইফসাইকেল কন্ট্রোল (Start / Stop / Restart)
 # ==========================================
+def get_startup_cfg():
+    if CONFIG_PATH.exists():
+        try:
+            return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {"main_file": "main.py", "req_file": "requirements.txt"}
+
+
 @app.post("/api/start/{server_id}")
 async def start_server(server_id: str):
     if server_mgr.process and server_mgr.process.returncode is None:
         return {"message": "Server is already running!"}
 
-    # কনফিগারেশন থেকে মেইন এন্ট্রি পয়েন্ট বের করা
     cfg = get_startup_cfg()
     main_script = cfg.get("main_file", "main.py")
     script_path = BASE_WORKSPACE / main_script
 
     if not script_path.exists():
-        # ফাইল না থাকলে একটি ডামি ফাইল তৈরি করা যাতে ক্র্যাশ না করে
-        script_path.write_text("import time\nprint('Server started!')\nwhile True:\n    time.sleep(1)\n")
+        script_path.write_text("import time\nprint('Server started successfully!')\nwhile True:\n    time.sleep(1)\n")
 
-    server_mgr.append_log(f"\n[System] Starting: python {main_script}...\n")
-    
+    server_mgr.append_log(f"\n[System] Starting: python -u {main_script}...\n")
+
     try:
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
+
         server_mgr.process = await asyncio.create_subprocess_exec(
             sys.executable, "-u", str(script_path),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            cwd=str(BASE_WORKSPACE)
+            cwd=str(BASE_WORKSPACE),
+            env=env
         )
 
         asyncio.create_task(stream_reader(server_mgr.process.stdout))
@@ -176,7 +188,7 @@ async def restart_server(server_id: str):
 
 
 # ==========================================
-# ৩. টার্মিনাল লগস ও কমান্ড API
+# ৩. টার্মিনাল লগ ও নন-ব্লকিং কমান্ড এক্সিকিউটর
 # ==========================================
 @app.get("/api/logs/{server_id}")
 async def get_logs(server_id: str):
@@ -197,17 +209,30 @@ async def run_command(payload: CommandRequest):
 
     server_mgr.append_log(f"\n$ {cmd}\n")
     try:
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
+
         proc = await asyncio.create_subprocess_shell(
             cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            cwd=str(BASE_WORKSPACE)
+            cwd=str(BASE_WORKSPACE),
+            env=env
         )
-        stdout, stderr = await proc.communicate()
-        if stdout:
-            server_mgr.append_log(stdout.decode("utf-8", errors="replace"))
-        if stderr:
-            server_mgr.append_log(stderr.decode("utf-8", errors="replace"))
+
+        # ৩ সেকেন্ড অপেক্ষা করবে। যদি স্ক্রিপ্ট দীর্ঘ সময় ধরে চলে (যেমন বট/সার্ভার),
+        # তাহলে ব্রাউজার হ্যাং না করে ব্যাকগ্রাউন্ড স্ট্রিমিং মোডে পাঠিয়ে দেবে।
+        try:
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=3.0)
+            if stdout:
+                server_mgr.append_log(stdout.decode("utf-8", errors="replace"))
+            if stderr:
+                server_mgr.append_log(stderr.decode("utf-8", errors="replace"))
+        except asyncio.TimeoutError:
+            server_mgr.append_log("[Running in background...]\n")
+            asyncio.create_task(stream_reader(proc.stdout))
+            asyncio.create_task(stream_reader(proc.stderr, prefix="[STDERR] "))
+
         return {"status": "executed"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -226,7 +251,7 @@ async def list_files(server_id: str, path: str = ""):
     try:
         for entry in os.scandir(target_dir):
             if entry.name == ".server_config.json":
-                continue  # হিডেন কনফিগ হাইড রাখা
+                continue
             files_list.append({
                 "name": entry.name,
                 "is_dir": entry.is_dir()
@@ -333,15 +358,6 @@ async def upload_files(
 # ==========================================
 # ৫. স্টার্টআপ কনফিগারেশন API
 # ==========================================
-def get_startup_cfg():
-    if CONFIG_PATH.exists():
-        try:
-            return json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
-        except:
-            pass
-    return {"main_file": "main.py", "req_file": "requirements.txt"}
-
-
 @app.get("/api/get_startup/{server_id}")
 async def get_startup(server_id: str):
     return get_startup_cfg()
@@ -358,10 +374,10 @@ async def set_startup(server_id: str, payload: StartupConfigRequest):
 
 
 # ==========================================
-# সার্ভার চালু করার কোড
+# সার্ভার রানার (Render & Local Compatible)
 # ==========================================
 if __name__ == "__main__":
     import uvicorn
-    # Render এর $PORT ধরবে, লোকাল পিসিতে থাকলে 8000 ব্যবহার করবে
+    # Render-এর জন্য PORT ভেরিয়েবল ধরে নেবে, লোকাল কম্পিউটারে 8000 ব্যবহার করবে
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
