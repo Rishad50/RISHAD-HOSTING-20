@@ -30,9 +30,10 @@ BASE_WORKSPACE = Path("./workspace").resolve()
 BASE_WORKSPACE.mkdir(parents=True, exist_ok=True)
 
 CONFIG_PATH = BASE_WORKSPACE / ".server_config.json"
+INIT_FLAG = BASE_WORKSPACE / ".initialized"
 
 # ==========================================
-# ডিফল্ট ফাইল তৈরি (Default Files Setup)
+# ডিফল্ট ফাইল তৈরি (শুধুমাত্র একদম প্রথমবার তৈরির জন্য)
 # ==========================================
 DEFAULT_MAIN_CODE = """# JUBAYER HOSTING - Bot
 import time
@@ -51,13 +52,17 @@ while True:
 
 DEFAULT_REQ_CODE = "# Add your pip packages here\n"
 
-default_main = BASE_WORKSPACE / "main.py"
-if not default_main.exists():
-    default_main.write_text(DEFAULT_MAIN_CODE, encoding="utf-8")
+# শুধুমাত্র প্রথমবারের জন্য ফাইল তৈরি হবে; ইউজার ডিলিট করলে আর রিক্রিয়েট হবে না
+if not INIT_FLAG.exists():
+    default_main = BASE_WORKSPACE / "main.py"
+    if not default_main.exists():
+        default_main.write_text(DEFAULT_MAIN_CODE, encoding="utf-8")
 
-default_req = BASE_WORKSPACE / "requirements.txt"
-if not default_req.exists():
-    default_req.write_text(DEFAULT_REQ_CODE, encoding="utf-8")
+    default_req = BASE_WORKSPACE / "requirements.txt"
+    if not default_req.exists():
+        default_req.write_text(DEFAULT_REQ_CODE, encoding="utf-8")
+    
+    INIT_FLAG.touch()
 
 
 # ==========================================
@@ -166,7 +171,12 @@ async def start_server(server_id: str):
     script_path = BASE_WORKSPACE / main_script
     req_path = BASE_WORKSPACE / req_file
 
-    # requirements.txt চেক করা এবং লাইভ ডাউনলোড আউটপুট দেখানো
+    # ১. মেইন স্ক্রিপ্ট ফাইলটি আছে কিনা যাচাই করা (না থাকলে আর তৈরি করবে না)
+    if not script_path.exists():
+        server_mgr.append_log(f"{main_script} not found! Please create or upload the file.\n")
+        return {"status": "error", "message": f"{main_script} not found"}
+
+    # ২. requirements.txt চেক করা এবং লাইভ ডাউনলোড আউটপুট দেখানো
     if req_path.exists() and req_path.is_file():
         req_content = req_path.read_text(encoding="utf-8", errors="replace")
         packages = [line.strip() for line in req_content.splitlines() if line.strip() and not line.strip().startswith("#")]
@@ -177,7 +187,6 @@ async def start_server(server_id: str):
             already_installed = hash_file.exists() and hash_file.read_text(encoding="utf-8").strip() == current_hash
 
             if not already_installed:
-                # সময়সহ মেসেজ শো করবে: [HH:MM:SS AM/PM] Installing requirements...
                 current_time_str = time.strftime("%I:%M:%S %p")
                 server_mgr.append_log(f"[{current_time_str}] Installing requirements...\n")
                 try:
@@ -188,11 +197,9 @@ async def start_server(server_id: str):
                         cwd=str(BASE_WORKSPACE)
                     )
                     
-                    # ডাউনলোড লগ লাইভ টার্মিনালে পাঠানোর টাস্ক
                     t_out = asyncio.create_task(stream_reader(pip_proc.stdout, prefix=""))
                     t_err = asyncio.create_task(stream_reader(pip_proc.stderr, prefix=""))
                     
-                    # ইনস্টলেশন শেষ হওয়া পর্যন্ত অপেক্ষা করবে
                     await asyncio.gather(t_out, t_err, pip_proc.wait())
                     
                     if pip_proc.returncode == 0:
@@ -200,11 +207,7 @@ async def start_server(server_id: str):
                 except Exception as e:
                     pass
 
-    # স্ক্রিপ্ট না থাকলে তৈরি করা
-    if not script_path.exists():
-        script_path.write_text(DEFAULT_MAIN_CODE, encoding="utf-8")
-
-    # মেইন স্ক্রিপ্ট চালু করা
+    # ৩. মেইন স্ক্রিপ্ট চালু করা
     server_mgr.append_log(f"\npython {main_script}\n")
     
     try:
