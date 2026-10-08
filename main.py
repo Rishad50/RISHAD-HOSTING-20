@@ -155,6 +155,9 @@ async def start_server(server_id: str):
     if server_mgr.process and server_mgr.process.returncode is None:
         return {"message": "Server is already running!"}
 
+    # আগের পুরানো সব লগ স্বয়ংক্রিয়ভাবে মুছে ফেলা হচ্ছে
+    server_mgr.clear_logs()
+
     cfg = get_startup_cfg()
     main_script = cfg.get("main_file", "main.py")
     req_file = cfg.get("req_file", "requirements.txt")
@@ -173,7 +176,7 @@ async def start_server(server_id: str):
             already_installed = hash_file.exists() and hash_file.read_text(encoding="utf-8").strip() == current_hash
 
             if not already_installed:
-                server_mgr.append_log(f"\npip install -r {req_file}\n")
+                server_mgr.append_log(f"pip install -r {req_file}\n")
                 try:
                     pip_proc = await asyncio.create_subprocess_exec(
                         sys.executable, "-u", "-m", "pip", "install", "-r", str(req_path),
@@ -426,6 +429,5 @@ async def set_startup(server_id: str, payload: StartupConfigRequest):
 # ==========================================
 if __name__ == "__main__":
     import uvicorn
-    # Render এর $PORT ধরবে, লোকাল পিসিতে থাকলে 8000 ব্যবহার করবে
     port = int(os.environ.get("PORT", 8000))
     uvicorn.run("main:app", host="0.0.0.0", port=port)
