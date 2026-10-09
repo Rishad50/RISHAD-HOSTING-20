@@ -171,7 +171,7 @@ async def start_server(server_id: str):
     script_path = BASE_WORKSPACE / main_script
     req_path = BASE_WORKSPACE / req_file
 
-    # ১. মেইন স্ক্রিপ্ট ফাইলটি আছে কিনা যাচাই করা (না থাকলে আর তৈরি করবে না)
+    # ১. মেইন স্ক্রিপ্ট ফাইলটি আছে কিনা যাচাই করা
     if not script_path.exists():
         server_mgr.append_log(f"{main_script} not found! Please create or upload the file.\n")
         return {"status": "error", "message": f"{main_script} not found"}
@@ -207,9 +207,7 @@ async def start_server(server_id: str):
                 except Exception as e:
                     pass
 
-    # ৩. মেইন স্ক্রিপ্ট চালু করা
-    server_mgr.append_log(f"\npython {main_script}\n")
-    
+    # ৩. মেইন স্ক্রিপ্ট চালু করা (python main.py লেখাটি আর লগ করা হবে না)
     try:
         server_mgr.process = await asyncio.create_subprocess_exec(
             sys.executable, "-u", str(script_path),
