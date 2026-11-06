@@ -45,7 +45,7 @@
     body {
       font-family: var(--font-sans);
       background-color: var(--bg);
-      padding: 0.65rem 0.65rem calc(var(--nav-height) + 0.6rem + env(safe-area-inset-bottom, 0px));
+      padding: 0.75rem 0.5rem calc(var(--nav-height) + 0.6rem + env(safe-area-inset-bottom, 0px));
       display: flex;
       justify-content: center;
       color: var(--text-dark);
@@ -55,7 +55,7 @@
 
     .container {
       width: 100%;
-      max-width: 480px;
+      max-width: 520px;
       display: flex;
       flex-direction: column;
     }
@@ -261,31 +261,33 @@
       background-color: #fecaca;
     }
 
-    /* SCREENSHOT EXACT PROPORTIONED FILE MANAGER */
-    .fm-toolbar-card {
+    /* FILE MANAGER CARD */
+    .fm-card {
       background: var(--card-bg);
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
-      margin-bottom: 0.65rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1rem;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+      position: relative;
     }
 
     .fm-toolbar {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 0.5rem;
+      gap: 0.45rem;
+      margin-bottom: 0.85rem;
     }
 
     .fm-btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.35rem;
-      height: 38px;
-      font-size: 0.84rem;
+      gap: 0.3rem;
+      padding: 0.55rem 0.25rem;
+      font-size: 0.75rem;
       font-weight: 600;
       border-radius: 8px;
+      border: 1px solid transparent;
       cursor: pointer;
       transition: all 0.15s ease;
       white-space: nowrap;
@@ -294,59 +296,66 @@
     }
 
     .fm-btn svg {
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
       flex-shrink: 0;
+      stroke-width: 2.2;
     }
 
     .fm-btn-primary {
-      background-color: #2563eb;
+      background-color: var(--primary);
       color: #ffffff;
-      border: none;
-      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
     }
 
     .fm-btn-primary:active {
-      background-color: #1d4ed8;
-      transform: scale(0.98);
+      transform: scale(0.97);
+      background-color: var(--primary-hover);
     }
 
     .fm-btn-outline {
       background-color: #ffffff;
-      border: 1px solid #e2e8f0;
-      color: #2563eb;
+      border-color: #e2e8f0;
+      color: var(--primary);
     }
 
     .fm-btn-outline:active {
-      background-color: #f0f7ff;
-      transform: scale(0.98);
+      transform: scale(0.97);
+      background-color: #f8fafc;
+    }
+
+    @media (hover: hover) {
+      .fm-btn-primary:hover {
+        background-color: var(--primary-hover);
+      }
+      .fm-btn-outline:hover {
+        background-color: var(--primary-light);
+        border-color: #bfdbfe;
+      }
     }
 
     .fm-list-box {
-      background: var(--card-bg);
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
       overflow: hidden;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+      background: #ffffff;
     }
 
     .fm-rows-wrap {
-      max-height: calc(100vh - 200px);
+      max-height: 480px;
       overflow-y: auto;
     }
 
-    /* Compact Row Sizing Matching Target Image */
     .fm-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0.58rem 0.85rem;
-      min-height: 50px;
-      border-bottom: 1px solid #f1f5f9;
-      cursor: pointer;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
+      padding: 0.65rem 0.85rem;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 0.82rem;
       transition: background-color 0.12s ease;
+      cursor: pointer;
+      position: relative;
     }
 
     .fm-row:last-child {
@@ -361,74 +370,82 @@
       background-color: #f1f5f9;
     }
 
-    .fm-left-col {
+    .fm-name-col {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 0.75rem;
       overflow: hidden;
       flex: 1;
       min-width: 0;
+      padding-right: 0.5rem;
     }
 
-    /* Crisp, delicate icon container */
     .fm-item-icon-box {
-      width: 30px;
-      height: 28px;
+      width: 22px;
+      height: 22px;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
     }
 
-    .fm-meta-col {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      min-width: 0;
-      overflow: hidden;
+    .fm-item-icon.folder {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      color: #2563eb;
+      fill: #2563eb;
     }
 
     .fm-item-name {
-      color: #0f172a;
-      font-weight: 600;
+      color: #1e293b;
+      font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: 0.90rem;
-      line-height: 1.25;
+      font-family: var(--font-sans);
+      font-size: 0.84rem;
+      letter-spacing: normal;
     }
 
-    .fm-item-subtext {
-      font-size: 0.72rem;
-      color: #64748b;
-      margin-top: 2px;
-      line-height: 1.1;
-      font-weight: 400;
-    }
-
-    /* Date pinned to right and aligned horizontally with subtitle */
-    .fm-right-col {
+    .fm-menu-col {
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: flex-end;
-      align-self: flex-end;
-      padding-bottom: 1px;
       flex-shrink: 0;
-      margin-left: 10px;
     }
 
-    .fm-item-date {
-      font-size: 0.76rem;
-      color: #475569;
-      white-space: nowrap;
-      font-weight: 400;
-      line-height: 1.1;
+    .fm-row-menu-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .fm-row-menu-btn:hover {
+      background: #e2e8f0;
+      color: var(--text-dark);
+    }
+
+    .fm-row-menu-btn svg {
+      width: 16px;
+      height: 16px;
     }
 
     /* Action Dropdown Menu */
     .fm-dropdown-menu {
       position: absolute;
-      width: 148px;
+      top: 100%;
+      right: 0.75rem;
+      width: 144px;
       background: #ffffff;
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -452,8 +469,8 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.5rem 0.6rem;
-      font-size: 0.8rem;
+      padding: 0.45rem 0.55rem;
+      font-size: 0.775rem;
       font-weight: 500;
       color: #334155;
       border-radius: 6px;
@@ -801,9 +818,11 @@
           autocapitalize="off"
           onkeydown="commandController.handleKeydown(event)"
         />
+        <!-- Stop/Cancel Button (Ctrl+C) -->
         <button type="button" id="cancelCmdBtn" class="cancel-btn" style="display:none;" onclick="commandController.cancel()" title="Cancel Execution (Ctrl+C)">
           <i class="fa-solid fa-stop"></i>
         </button>
+        <!-- Run / Send Button -->
         <button type="submit" id="sendBtn" class="send-btn">
           <i class="fa-solid fa-paper-plane"></i>
           <span>Send</span>
@@ -811,46 +830,43 @@
       </form>
     </div>
 
-    <!-- VIEW 2: FILE MANAGER TAB (EXACTLY MATCHED TO TARGET SCREENSHOT) -->
+    <!-- VIEW 2: FILE MANAGER TAB -->
     <div id="tab-files" class="tab-content" role="tabpanel" aria-labelledby="nav-btn-files">
-      
-      <!-- Top Action Toolbar Card -->
-      <div class="fm-toolbar-card">
+      <div class="fm-card">
+        <!-- Action Toolbar -->
         <div class="fm-toolbar">
           <input type="file" id="fm-upload-input" multiple style="display: none;" onchange="fileManager.handleUpload(event)" />
           <button class="fm-btn fm-btn-primary" id="fm-btn-upload" onclick="document.getElementById('fm-upload-input').click()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
             <span>Upload</span>
           </button>
-          
           <button class="fm-btn fm-btn-outline" id="fm-btn-new-folder" onclick="fileManager.openNewFolderModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
               <line x1="12" y1="11" x2="12" y2="17"></line>
               <line x1="9" y1="14" x2="15" y2="14"></line>
             </svg>
             <span>New Folder</span>
           </button>
-          
           <button class="fm-btn fm-btn-outline" id="fm-btn-new-file" onclick="fileManager.openNewFileModal()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
             <span>New File</span>
           </button>
         </div>
-      </div>
 
-      <!-- File List Card -->
-      <div class="fm-list-box">
-        <div class="fm-rows-wrap" id="fm-rows-container">
-          <div class="fm-empty-state">
-            <div class="fm-empty-text">Loading files...</div>
+        <!-- File List Box -->
+        <div class="fm-list-box">
+          <div class="fm-rows-wrap" id="fm-rows-container">
+            <div class="fm-empty-state">
+              <div class="fm-empty-text">Loading files...</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1018,8 +1034,9 @@
       }
     };
 
-    /* SVG ICONS FOR CONTEXT ACTIONS */
+    /* SVG ICONS */
     const ICONS = {
+      more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="5" r="1"></circle><circle cx="12" cy="19" r="1"></circle></svg>',
       edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>',
       download: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>',
       trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>',
@@ -1080,7 +1097,7 @@
       } catch (e) {}
     }
 
-    /* COMMAND INPUT CONTROLLER */
+    /* COMMAND INPUT CONTROLLER (History, Execution, Ctrl+C Cancel) */
     const commandController = {
       history: [],
       historyIndex: -1,
@@ -1096,6 +1113,7 @@
           return;
         }
 
+        // Store command in history
         this.history.push(command);
         this.historyIndex = this.history.length;
         input.value = "";
@@ -1103,6 +1121,7 @@
         this.setRunning(true);
 
         try {
+          // Send command to backend
           await api.post(`/api/command/${CONFIG.SERVER_ID}`, { command });
           setTimeout(pollLogs, 300);
         } catch (err) {
@@ -1129,13 +1148,17 @@
 
       handleKeydown(e) {
         const input = document.getElementById("cmdInput");
+        
+        // Command history UP
         if (e.key === "ArrowUp") {
           e.preventDefault();
           if (this.history.length > 0 && this.historyIndex > 0) {
             this.historyIndex--;
             input.value = this.history[this.historyIndex];
           }
-        } else if (e.key === "ArrowDown") {
+        } 
+        // Command history DOWN
+        else if (e.key === "ArrowDown") {
           e.preventDefault();
           if (this.historyIndex < this.history.length - 1) {
             this.historyIndex++;
@@ -1144,7 +1167,9 @@
             this.historyIndex = this.history.length;
             input.value = "";
           }
-        } else if (e.ctrlKey && e.key === "c") {
+        } 
+        // Keyboard Cancel: Ctrl + C
+        else if (e.ctrlKey && e.key === "c") {
           e.preventDefault();
           this.cancel();
         }
@@ -1204,98 +1229,31 @@
 
     deleteCancelBtn.onclick = () => deleteModal.classList.remove('open');
 
-    /* EXACT PIXEL-PERFECT FILE MANAGER CONTROLLER */
+    /* FILE MANAGER */
     const fileManager = {
       currentPath: "",
       currentFiles: [],
 
-      // Accurate compact icons matching target screenshot
-      getFolderUpIcon() {
-        return `
-          <svg width="28" height="23" viewBox="0 0 28 23" fill="none">
-            <path d="M1.5 4C1.5 2.62 2.62 1.5 4 1.5H9.5C10.5 1.5 11.3 2.1 11.7 3L12.7 5H24C25.38 5 26.5 6.12 26.5 7.5V19C26.5 20.38 25.38 21.5 24 21.5H4C2.62 21.5 1.5 20.38 1.5 19V4Z" fill="#FFA000"/>
-            <path d="M1.5 7.5C1.5 6.12 2.62 5 4 5H24C25.38 5 26.5 6.12 26.5 7.5V19C26.5 20.38 25.38 21.5 24 21.5H4C2.62 21.5 1.5 20.38 1.5 19V7.5Z" fill="#FFB300"/>
-            <path d="M14 9.5L9.5 14H12.2V18H15.8V14H18.5L14 9.5Z" fill="#22c55e"/>
-          </svg>
-        `;
-      },
-
-      getFolderIcon() {
-        return `
-          <svg width="28" height="23" viewBox="0 0 28 23" fill="none">
-            <path d="M1.5 4C1.5 2.62 2.62 1.5 4 1.5H9.5C10.5 1.5 11.3 2.1 11.7 3L12.7 5H24C25.38 5 26.5 6.12 26.5 7.5V19C26.5 20.38 25.38 21.5 24 21.5H4C2.62 21.5 1.5 20.38 1.5 19V4Z" fill="#FFA000"/>
-            <path d="M1.5 7.5C1.5 6.12 2.62 5 4 5H24C25.38 5 26.5 6.12 26.5 7.5V19C26.5 20.38 25.38 21.5 24 21.5H4C2.62 21.5 1.5 20.38 1.5 19V7.5Z" fill="#FFB300"/>
-          </svg>
-        `;
-      },
-
-      getFileIcon(filename) {
-        if (filename.endsWith('.txt') || filename.endsWith('.md')) {
-          return `
-            <svg width="22" height="27" viewBox="0 0 22 27" fill="none">
-              <path d="M2 2.5C2 1.4 2.9 0.5 4 0.5H14.5L20.5 6.5V24.5C20.5 25.6 19.6 26.5 18.5 26.5H4C2.9 26.5 2 25.6 2 24.5V2.5Z" fill="#E2E8F0"/>
-              <path d="M14.5 0.5V5.5C14.5 6.05 14.95 6.5 15.5 6.5H20.5L14.5 0.5Z" fill="#CBD5E1"/>
-              <rect x="5.5" y="10.5" width="11" height="1.4" rx="0.7" fill="#475569"/>
-              <rect x="5.5" y="13.5" width="11" height="1.4" rx="0.7" fill="#475569"/>
-              <rect x="5.5" y="16.5" width="11" height="1.4" rx="0.7" fill="#475569"/>
-              <rect x="5.5" y="19.5" width="11" height="1.4" rx="0.7" fill="#475569"/>
-              <rect x="5.5" y="22.5" width="11" height="1.4" rx="0.7" fill="#475569"/>
-            </svg>
-          `;
-        }
-        return `
-          <svg width="22" height="27" viewBox="0 0 22 27" fill="none">
-            <path d="M2 2.5C2 1.4 2.9 0.5 4 0.5H14.5L20.5 6.5V24.5C20.5 25.6 19.6 26.5 18.5 26.5H4C2.9 26.5 2 25.6 2 24.5V2.5Z" fill="#E2E8F0"/>
-            <path d="M14.5 0.5V5.5C14.5 6.05 14.95 6.5 15.5 6.5H20.5L14.5 0.5Z" fill="#CBD5E1"/>
-          </svg>
-        `;
-      },
-
-      /* Exact formatting without spaces (6.47KB, 24.45KB, 6.67MB) */
-      formatItemSize(item, isDir) {
+      getFileIcon(filename, isDir, isZip) {
         if (isDir) {
-          if (item.items_text) return item.items_text;
-          if (item.size && typeof item.size === 'string' && (item.size.includes('item') || item.size.includes('Item'))) {
-            return item.size;
-          }
-          const count = item.items_count !== undefined ? item.items_count : (item.items !== undefined ? item.items : 1);
-          return `${count} item${count == 1 ? '' : 's'}`;
+          return `<svg class="fm-item-icon folder" viewBox="0 0 24 24"><path d="M2.5 6.5A2.5 2.5 0 0 1 5 4h3.6c.7 0 1.35.3 1.8.85l1.2 1.45c.45.55 1.1.85 1.8.85H19a2.5 2.5 0 0 1 2.5 2.5v7.8a2.5 2.5 0 0 1-2.5 2.5H5a2.5 2.5 0 0 1-2.5-2.5V6.5z"/></svg>`;
         }
-
-        if (item.size_formatted) return item.size_formatted.replace(/\s+/g, '');
-        if (typeof item.size === 'string' && /[a-zA-Z]/.test(item.size)) {
-          return item.size.replace(/\s+/g, '');
+        if (isZip || filename.endsWith('.zip')) {
+          return `<i class="fa-solid fa-file-zipper" style="color: #ec4899; font-size: 1.15rem;"></i>`;
         }
-
-        const bytes = typeof item.size === 'number' ? item.size : parseFloat(item.size || item.file_size || 0);
-        if (isNaN(bytes) || bytes <= 0) return "0B";
-        if (bytes < 1024) return bytes + "B";
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + "KB";
-        return (bytes / (1024 * 1024)).toFixed(2) + "MB";
-      },
-
-      /* Always returns formatted date in M/D/YY (e.g. 11/2/26, 9/24/26) so right side is never empty */
-      formatItemDate(item) {
-        if (item.date && typeof item.date === 'string' && item.date.trim()) {
-          return item.date.trim();
+        if (filename.endsWith('.py')) {
+          return `<i class="fa-brands fa-python" style="color: #3b82f6; font-size: 1.2rem;"></i>`;
         }
-        const raw = item.mtime || item.modified || item.updated_at || item.last_modified;
-        let d = null;
-        if (raw) {
-          if (typeof raw === 'number') {
-            d = new Date(raw < 10000000000 ? raw * 1000 : raw);
-          } else {
-            d = new Date(raw);
-          }
+        if (filename.endsWith('.json')) {
+          return `<i class="fa-solid fa-file-code" style="color: #10b981; font-size: 1.1rem;"></i>`;
         }
-        // Fallback to current date if missing from backend so it renders like screenshot
-        if (!d || isNaN(d.getTime())) {
-          d = new Date();
+        if (filename.endsWith('.txt') || filename.endsWith('.md')) {
+          return `<i class="fa-solid fa-file-lines" style="color: #64748b; font-size: 1.15rem;"></i>`;
         }
-        const m = d.getMonth() + 1;
-        const day = d.getDate();
-        const yr = String(d.getFullYear()).slice(-2);
-        return `${m}/${day}/${yr}`;
+        if (filename.endsWith('.sh')) {
+          return `<i class="fa-solid fa-terminal" style="color: #22c55e; font-size: 1.1rem;"></i>`;
+        }
+        return `<i class="fa-solid fa-file" style="color: #94a3b8; font-size: 1.15rem;"></i>`;
       },
 
       async load(path = this.currentPath) {
@@ -1322,73 +1280,68 @@
             return bDir - aDir;
           });
 
-          // ".." Up Row
-          const upRow = document.createElement("div");
-          upRow.className = "fm-row";
-          upRow.innerHTML = `
-            <div class="fm-left-col">
-              <div class="fm-item-icon-box">
-                ${this.getFolderUpIcon()}
+          if (this.currentPath !== "") {
+            const upRow = document.createElement("div");
+            upRow.className = "fm-row";
+            upRow.innerHTML = `
+              <div class="fm-name-col">
+                <span class="fm-item-icon-box" style="color: var(--primary); font-size: 1.1rem;">↵</span>
+                <span class="fm-item-name" style="color: var(--primary); font-weight: 600;">.. (Up)</span>
               </div>
-              <div class="fm-meta-col">
-                <span class="fm-item-name">..</span>
+            `;
+            upRow.onclick = () => {
+              const parts = this.currentPath.split("/").filter(Boolean);
+              parts.pop();
+              this.load(parts.join("/"));
+            };
+            container.appendChild(upRow);
+          }
+
+          if (files.length === 0) {
+            container.innerHTML += `
+              <div class="fm-empty-state">
+                <svg class="fm-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path>
+                </svg>
+                <div class="fm-empty-text">No files in this folder</div>
               </div>
-            </div>
-            <div class="fm-right-col"></div>
-          `;
-          upRow.onclick = () => {
-            const parts = this.currentPath.split("/").filter(Boolean);
-            parts.pop();
-            this.load(parts.join("/"));
-          };
-          container.appendChild(upRow);
+            `;
+            return;
+          }
 
           files.forEach(item => {
             const isDir = Boolean(item.is_dir);
+            const isZip = item.name.endsWith('.zip');
             const fullPath = this.currentPath ? `${this.currentPath}/${item.name}` : item.name;
             const row = document.createElement("div");
             row.className = "fm-row";
 
-            const iconHtml = isDir ? this.getFolderIcon() : this.getFileIcon(item.name);
-            const subtext = this.formatItemSize(item, isDir);
-            const dateText = this.formatItemDate(item);
-
-            row.innerHTML = `
-              <div class="fm-left-col">
-                <div class="fm-item-icon-box">${iconHtml}</div>
-                <div class="fm-meta-col">
-                  <span class="fm-item-name">${item.name}</span>
-                  ${subtext ? `<span class="fm-item-subtext">${subtext}</span>` : ''}
-                </div>
-              </div>
-              <div class="fm-right-col">
-                <span class="fm-item-date">${dateText}</span>
-              </div>
-            `;
-
-            // Long-press or context menu for file options
-            let pressTimer = null;
-            row.addEventListener('touchstart', (e) => {
-              pressTimer = setTimeout(() => {
-                this.openDropdown(row, item, fullPath, e.touches[0].clientX, e.touches[0].clientY);
-              }, 480);
-            }, { passive: true });
-
-            row.addEventListener('touchend', () => clearTimeout(pressTimer));
-            row.addEventListener('touchmove', () => clearTimeout(pressTimer));
-
-            row.oncontextmenu = (e) => {
-              e.preventDefault();
-              this.openDropdown(row, item, fullPath, e.clientX, e.clientY);
-            };
-
             row.onclick = (e) => {
-              if (e.target.closest('.fm-dropdown-menu')) return;
+              if (e.target.closest('.fm-row-menu-btn') || e.target.closest('.fm-dropdown-menu')) return;
               if (isDir) {
                 this.load(fullPath);
               } else {
                 fileEditor.open(fullPath);
               }
+            };
+
+            const iconHtml = this.getFileIcon(item.name, isDir, isZip);
+            row.innerHTML = `
+              <div class="fm-name-col">
+                <span class="fm-item-icon-box">${iconHtml}</span>
+                <span class="fm-item-name" title="${item.name}">${item.name}</span>
+              </div>
+              <div class="fm-menu-col">
+                <button class="fm-row-menu-btn" title="Actions" aria-label="Item Actions">
+                  ${ICONS.more}
+                </button>
+              </div>
+            `;
+
+            const menuBtn = row.querySelector('.fm-row-menu-btn');
+            menuBtn.onclick = (e) => {
+              e.stopPropagation();
+              this.openDropdown(menuBtn, item, fullPath);
             };
 
             container.appendChild(row);
@@ -1402,10 +1355,11 @@
         }
       },
 
-      openDropdown(anchorEl, item, fullPath, clientX, clientY) {
+      openDropdown(anchorBtn, item, fullPath) {
         const dropdownEl = document.getElementById('fm-dropdown');
         const isDir = Boolean(item.is_dir);
         const isZip = item.name.endsWith('.zip');
+        const rect = anchorBtn.getBoundingClientRect();
 
         let menuHtml = '';
         if (isDir) {
@@ -1452,14 +1406,12 @@
         dropdownEl.innerHTML = menuHtml;
         dropdownEl.classList.add('show');
 
-        const rect = anchorEl.getBoundingClientRect();
-        const posX = clientX !== undefined ? clientX : rect.right - 140;
-        const posY = clientY !== undefined ? clientY : rect.bottom;
-
-        let left = Math.min(posX, window.innerWidth - 160);
+        const dropdownWidth = 144;
+        let left = rect.right - dropdownWidth;
         if (left < 10) left = 10;
-        let top = posY + window.scrollY + 2;
+        let top = rect.bottom + window.scrollY + 4;
 
+        dropdownEl.style.position = 'absolute';
         dropdownEl.style.top = `${top}px`;
         dropdownEl.style.left = `${left}px`;
 
@@ -1637,7 +1589,7 @@
 
     /* CLOSE DROPDOWNS ON OUTSIDE CLICK */
     window.addEventListener('click', (e) => {
-      if (!e.target.closest('#fm-dropdown')) {
+      if (!e.target.closest('#fm-dropdown') && !e.target.closest('.fm-row-menu-btn')) {
         fileManager.closeDropdown();
       }
     });
